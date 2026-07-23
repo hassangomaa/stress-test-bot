@@ -1,0 +1,35 @@
+{
+  "name": "zaedl",
+  "brand": "zaedl",
+  "url_key": "prod",
+  "workers": 200,
+  "think_delay_ms": [50, 400],
+  "heartbeat": {
+    "enabled": true,
+    "every_steps": true
+  },
+  "visitor_cookie": "zaedl_vid",
+  "steps": {
+    "register": true,
+    "checkout_method": true,
+    "phone": true,
+    "phone_otp": true,
+    "installment": true,
+    "payment": true,
+    "bank_otp": true
+  },
+  "payment_methods": ["tabby", "tamara"],
+  "installment_counts": {
+    "tabby": [4, 6, 8, 12],
+    "tamara": [4, 6, 12, 24]
+  },
+  "catalog_source": "api",
+  "timeout_s": 30,
+  "retry": {
+    "max": 3,
+    "backoff_ms": [500, 2000]
+  },
+  "on_capacity_blocked": "sleep_and_retry",
+  "capacity_sleep_s": [10, 30],
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+}

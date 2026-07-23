@@ -1,0 +1,31 @@
+{
+  "name": "altmiz",
+  "brand": "altmiz",
+  "url_key": "prod",
+  "workers": 200,
+  "think_delay_ms": [50, 400],
+  "heartbeat": {
+    "enabled": false
+  },
+  "visitor_cookie": "altmiz_vid",
+  "steps": {
+    "register": true,
+    "checkout_method": false,
+    "phone": false,
+    "phone_otp": false,
+    "installment": false,
+    "payment": true,
+    "bank_otp": true
+  },
+  "payment_methods": [],
+  "installment_counts": {},
+  "catalog_source": "html",
+  "timeout_s": 30,
+  "retry": {
+    "max": 3,
+    "backoff_ms": [500, 2000]
+  },
+  "on_capacity_blocked": "sleep_and_retry",
+  "capacity_sleep_s": [10, 30],
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+}

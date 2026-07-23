@@ -1,0 +1,10 @@
+{
+  "zaedl": {
+    "prod": "https://zaedl.altmiz-store.shop",
+    "local": "http://127.0.0.1:8000"
+  },
+  "altmiz": {
+    "prod": "https://altmiz-store.shop",
+    "local": "http://127.0.0.1:8001"
+  }
+}
