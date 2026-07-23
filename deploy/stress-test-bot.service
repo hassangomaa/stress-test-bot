@@ -8,7 +8,7 @@ Type=simple
 User=root
 WorkingDirectory=/opt/stress-test-bot
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/opt/stress-test-bot/.venv/bin/python -m stressbot run --profile zaedl-vps --url-key prod --workers 25 --ramp 5:15
+ExecStart=/opt/stress-test-bot/.venv/bin/python -m stressbot run --profile zaedl-vps --url-key prod
 Restart=always
 RestartSec=30
 

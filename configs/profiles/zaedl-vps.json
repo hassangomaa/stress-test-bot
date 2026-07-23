@@ -2,13 +2,19 @@
   "name": "zaedl-vps",
   "brand": "zaedl",
   "url_key": "prod",
-  "workers": 25,
+  "workers": 1,
   "think_delay_ms": [800, 3500],
   "heartbeat": {
     "enabled": true,
     "every_steps": true
   },
   "visitor_cookie": "zaedl_vid",
+  "schedule": {
+    "mode": "interval",
+    "window_minutes": 60,
+    "visits_per_window": [10, 20],
+    "loop": true
+  },
   "steps": {
     "register": true,
     "checkout_method": true,
