@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import random
 import re
-from typing import Any
 
 from stressbot.config import ProfileConfig
 from stressbot.fake_data import FakeUser, random_otp
@@ -22,9 +21,8 @@ class ZaedlProfile:
     def run_once(self, session: StorefrontSession) -> JourneyResult:
         user = FakeUser.generate()
         try:
-            session.with_retries(lambda: session.get("/", step="land"), "land")
+            session.with_retries(lambda: session.browse_like_visitor(), "browse")
             session.think()
-            session.send_heartbeat("/")
 
             service = session.with_retries(lambda: self._pick_service(session), "catalog")
             session.think()

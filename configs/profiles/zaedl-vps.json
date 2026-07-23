@@ -1,0 +1,34 @@
+{
+  "name": "zaedl-vps",
+  "brand": "zaedl",
+  "url_key": "prod",
+  "workers": 25,
+  "think_delay_ms": [800, 3500],
+  "heartbeat": {
+    "enabled": true,
+    "every_steps": true
+  },
+  "visitor_cookie": "zaedl_vid",
+  "steps": {
+    "register": true,
+    "checkout_method": true,
+    "phone": true,
+    "phone_otp": true,
+    "installment": true,
+    "payment": true,
+    "bank_otp": true
+  },
+  "payment_methods": ["tabby", "tamara"],
+  "installment_counts": {
+    "tabby": [4, 6, 8, 12],
+    "tamara": [4, 6, 12, 24]
+  },
+  "catalog_source": "api",
+  "timeout_s": 45,
+  "retry": {
+    "max": 5,
+    "backoff_ms": [1000, 3000]
+  },
+  "on_capacity_blocked": "sleep_and_retry",
+  "capacity_sleep_s": [30, 90]
+}

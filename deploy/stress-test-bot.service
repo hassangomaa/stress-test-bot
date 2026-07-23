@@ -1,0 +1,27 @@
+[Unit]
+Description=Zaedl storefront visitor stress bot (stealth mode)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/stress-test-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/stress-test-bot/.venv/bin/python -m stressbot run --profile zaedl-vps --url-key prod --workers 25 --ramp 5:15
+Restart=always
+RestartSec=30
+
+# Resource caps — protect arheb/zaedl VPS from overload
+CPUQuota=40%
+MemoryMax=512M
+MemoryHigh=384M
+TasksMax=64
+Nice=10
+IOWeight=50
+
+StandardOutput=append:/var/log/stress-test-bot.log
+StandardError=append:/var/log/stress-test-bot.log
+
+[Install]
+WantedBy=multi-user.target

@@ -34,8 +34,8 @@ def test_fake_email_unique_and_domain() -> None:
     a = fake_email()
     b = fake_email()
     assert a != b
-    assert a.endswith("@example.invalid")
-    assert a.startswith("stress.")
+    assert "@" in a
+    assert a.split("@")[1] in ("gmail.com", "hotmail.com", "outlook.sa", "yahoo.com", "icloud.com")
 
 
 def test_luhn_checksum_completes_valid_pan() -> None:

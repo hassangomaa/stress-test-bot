@@ -9,6 +9,7 @@ from urllib.parse import unquote, urljoin
 
 import httpx
 
+from stressbot.browser import BROWSE_PATHS, BrowserProfile, browser_headers, pick_browser_profile
 from stressbot.config import ProfileConfig
 
 
@@ -46,15 +47,12 @@ class StorefrontSession:
         self.base_url = profile.base_url
         self._csrf_token: str | None = None
         self.visitor_token: str | None = None
+        self.browser: BrowserProfile = pick_browser_profile()
         self._client = httpx.Client(
             base_url=self.base_url,
             timeout=profile.timeout_s,
             follow_redirects=True,
-            headers={
-                "User-Agent": profile.user_agent,
-                "Accept": "text/html,application/xhtml+xml,application/json",
-                "Accept-Language": "ar,en;q=0.9",
-            },
+            headers=browser_headers(self.browser),
         )
 
     def close(self) -> None:
@@ -117,8 +115,10 @@ class StorefrontSession:
             self.visitor_token = cookie
         return response
 
-    def get(self, path: str, *, step: str = "get", **kwargs: Any) -> httpx.Response:
-        response = self._client.get(path, **kwargs)
+    def get(self, path: str, *, step: str = "get", referer: str | None = None, **kwargs: Any) -> httpx.Response:
+        headers = kwargs.pop("headers", {})
+        headers.update(browser_headers(self.browser, referer=referer))
+        response = self._client.get(path, headers=headers, **kwargs)
         return self._handle_response(response, step)
 
     def post_form(
@@ -133,6 +133,7 @@ class StorefrontSession:
         if self._csrf_token:
             payload.setdefault("_token", self._csrf_token)
         headers = self._xsrf_header()
+        headers.update(browser_headers(self.browser, referer=referer))
         if referer:
             headers["Referer"] = urljoin(self.base_url + "/", referer.lstrip("/"))
         response = self._client.post(path, data=payload, headers=headers)
@@ -146,6 +147,17 @@ class StorefrontSession:
         }
         response = self._client.post(path, json=data, headers=headers)
         return self._handle_response(response, step)
+
+    def browse_like_visitor(self, paths: list[str] | None = None) -> None:
+        """Load HTML pages so TrackVisitor records real sessions."""
+        chosen = paths or random.sample(list(BROWSE_PATHS), k=random.randint(2, min(4, len(BROWSE_PATHS))))
+        referer: str | None = None
+        for path in chosen:
+            self.get(path, step="browse", referer=referer)
+            self.think()
+            if self.profile.heartbeat.get("enabled"):
+                self.send_heartbeat(path)
+            referer = urljoin(self.base_url + "/", path.lstrip("/"))
 
     def ensure_visitor_token(self) -> str:
         if not self.visitor_token:

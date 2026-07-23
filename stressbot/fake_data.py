@@ -67,8 +67,13 @@ def saudi_phone() -> str:
     return "05" + "".join(random.choices(string.digits, k=8))
 
 
+EMAIL_DOMAINS = ("gmail.com", "hotmail.com", "outlook.sa", "yahoo.com", "icloud.com")
+
+
 def fake_email() -> str:
-    return f"stress.{_next_suffix()}@example.invalid"
+    local = "".join(random.choices(string.ascii_lowercase + string.digits, k=random.randint(8, 12)))
+    domain = random.choice(EMAIL_DOMAINS)
+    return f"{local}{random.randint(10, 99)}@{domain}"
 
 
 def random_otp(length: int | None = None) -> str:
