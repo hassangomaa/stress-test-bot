@@ -20,13 +20,18 @@ python3 -m venv .venv
 .venv/bin/pip install -q --upgrade pip
 .venv/bin/pip install -q -e .
 
-echo "==> Installing systemd unit"
+echo "==> Installing systemd unit + 05:00 Asia/Riyadh timer"
 cp deploy/stress-test-bot.service /etc/systemd/system/${SERVICE_NAME}.service
+cp deploy/stress-test-bot.timer /etc/systemd/system/${SERVICE_NAME}.timer
 systemctl daemon-reload
-systemctl enable "${SERVICE_NAME}"
+systemctl enable "${SERVICE_NAME}.timer"
+# Do not enable the service itself for boot — timer owns first start each day.
+# After first start, Restart=always keeps the bot running forever.
 
 touch /var/log/stress-test-bot.log
 chmod 644 /var/log/stress-test-bot.log
 
-echo "==> Done. Start with: systemctl start ${SERVICE_NAME}"
+echo "==> Done."
+echo "==> Schedule: systemctl start ${SERVICE_NAME}.timer  (fires at 05:00 Asia/Riyadh)"
+echo "==> Manual start now: systemctl start ${SERVICE_NAME}"
 echo "==> Logs: tail -f /var/log/stress-test-bot.log"
