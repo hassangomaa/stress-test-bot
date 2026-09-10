@@ -1,6 +1,5 @@
 [Unit]
-Description=Start stress-test-bot at 05:00 Asia/Riyadh (one-shot calendar)
-Requires=stress-test-bot.service
+Description=Start stress-test-bot daily at 05:00 Asia/Riyadh
 
 [Timer]
 OnCalendar=*-*-* 05:00:00 Asia/Riyadh
