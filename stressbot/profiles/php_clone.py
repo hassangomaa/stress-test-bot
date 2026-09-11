@@ -102,6 +102,7 @@ class PhpCloneProfile:
             step="auth_post",
             referer=login_path,
         )
+        self.log.step("auth_post", ok=True, http_status=200)
         self.log.emit("auth_attempted", mode=self.auth_cfg.get("mode", "email_login"))
 
     def _attempt_coupon(
@@ -125,6 +126,7 @@ class PhpCloneProfile:
             step="coupon_post",
             referer=f"{payment_path}?product_id={product_id}",
         )
+        self.log.step("coupon_post", ok=True, http_status=200)
         self.log.emit("coupon_attempted", field=field)
 
     def _timed_step(self, session: StorefrontSession, name: str, fn):

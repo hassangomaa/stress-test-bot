@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 import time
+import uuid
 from typing import Any
 
 from stressbot.config import ProfileConfig
@@ -12,6 +13,13 @@ from stressbot.metrics import JourneyResult
 
 
 SADAD_MARKERS = ("سداد", "رسوم")
+
+# HTTP codes that count as step complete for checkout APIs
+CHECKOUT_OK_CODES = {200, 201, 202, 204}
+
+
+def new_checkout_session_id() -> str:
+    return str(uuid.uuid4())
 
 
 def pick_product(products: list[dict[str, Any]], variant: str) -> dict[str, Any]:
@@ -33,26 +41,26 @@ def pick_product(products: list[dict[str, Any]], variant: str) -> dict[str, Any]
     return random.choice(products)
 
 
-def checkout_payload_for_step(step: str, product: dict[str, Any], user: FakeUser) -> dict[str, Any]:
+def checkout_payload_for_step(
+    step: str,
+    product: dict[str, Any],
+    user: FakeUser,
+    session_id: str,
+    *,
+    activation_code: str | None = None,
+) -> dict[str, Any]:
     product_id = product.get("id") or product.get("productId") or product.get("product_id")
-    base = {
-        "productId": product_id,
-        "product_id": product_id,
-        "id": product_id,
-        "phone": user.phone,
-        "email": user.email,
-        "name": user.name,
-    }
+    base = {"sessionId": session_id, "productId": product_id}
     if step == "manual-gate":
-        return {k: v for k, v in base.items() if v is not None}
+        return base
     if step == "request-activation-code":
-        return {"phone": user.phone, "email": user.email, "productId": product_id}
+        return {**base, "phoneNumber": user.phone}
     if step == "verify-activation-code":
-        return {"code": random_otp(6), "productId": product_id}
+        return {"sessionId": session_id, "code": activation_code or random_otp(6), "productId": product_id}
     if step == "submit-code":
-        return {"activationCode": random_otp(6), "productId": product_id}
+        return {"sessionId": session_id, "code": activation_code or random_otp(6), "productId": product_id}
     if step == "approval":
-        return {"productId": product_id, "approved": True}
+        return base
     return base
 
 
@@ -111,29 +119,56 @@ class ReactCloneProfile:
                     self.log.emit("auth_skipped", reason="login_optional_disabled_in_steps")
 
             if self.profile.steps.get("checkout", True) and product:
+                session_id = new_checkout_session_id()
                 gate_enabled = bool(settings.get("checkoutGateEnabled"))
-                gate_mode = self.profile.steps.get("activation_gate", "auto")
-                run_gate = gate_enabled or gate_mode == "force"
-
-                if not run_gate:
+                if not gate_enabled:
                     self.log.gate_skipped("checkoutGateEnabled=false")
 
-                checkout_steps = list(self.checkout_cfg.get("steps", ["manual-gate"]))
-                if not run_gate:
-                    checkout_steps = checkout_steps[:1]
+                activation_code: str | None = None
+                checkout_steps = ["manual-gate", "request-activation-code", "verify-activation-code", "approval", "submit-code"]
+                blocked_steps: list[str] = []
 
                 for step_name in checkout_steps:
                     path = f"/api/checkout/{step_name}"
-                    payload = checkout_payload_for_step(step_name, product, user)
+                    payload = checkout_payload_for_step(
+                        step_name,
+                        product,
+                        user,
+                        session_id,
+                        activation_code=activation_code,
+                    )
                     resp = self._timed_step(
                         session,
                         f"checkout/{step_name}",
                         lambda p=path, pl=payload: session.post_json(p, pl, step=f"checkout_{step_name}"),
+                        checkout=True,
                     )
                     session.think()
-                    if resp.status_code >= 500:
+
+                    if step_name == "request-activation-code" and resp.status_code in CHECKOUT_OK_CODES:
+                        try:
+                            body = resp.json()
+                            activation_code = str(body.get("activationCode") or body.get("code") or "")
+                        except Exception:
+                            activation_code = None
+
+                    if resp.status_code not in CHECKOUT_OK_CODES:
+                        blocked_steps.append(step_name)
                         detail = (resp.text or "")[:200]
-                        raise RuntimeError(f"Checkout {step_name} server error {resp.status_code}: {detail}")
+                        self.log.emit(
+                            "step_blocked",
+                            step=f"checkout/{step_name}",
+                            http_status=resp.status_code,
+                            detail=detail,
+                        )
+                        if step_name == "submit-code":
+                            # Expected when admin approval pending — not fatal
+                            continue
+                        if resp.status_code >= 500:
+                            raise RuntimeError(f"Checkout {step_name} server error {resp.status_code}: {detail}")
+
+                if blocked_steps and "manual-gate" in blocked_steps:
+                    raise RuntimeError(f"Checkout blocked at required steps: {blocked_steps}")
 
             duration = time.monotonic() - started
             self.log.journey_end(True, "complete", duration)
@@ -175,16 +210,24 @@ class ReactCloneProfile:
 
         self.log.emit("auth_attempted", detail="no_public_auth_api; login_page_only")
 
-    def _timed_step(self, session: StorefrontSession, name: str, fn) -> Any:
+    def _timed_step(self, session: StorefrontSession, name: str, fn, *, checkout: bool = False) -> Any:
         t0 = time.monotonic()
         try:
             result = session.with_retries(fn, name)
             status = getattr(result, "status_code", None)
+            if checkout and status is not None:
+                ok = status in CHECKOUT_OK_CODES
+            else:
+                ok = status is None or status < 500
+            detail = None
+            if checkout and status is not None and not ok:
+                detail = (getattr(result, "text", None) or "")[:200]
             self.log.step(
                 name,
-                ok=True if status is None or status < 500 else False,
+                ok=ok,
                 http_status=status,
                 duration_ms=round((time.monotonic() - t0) * 1000, 1),
+                detail=detail,
             )
             return result
         except Exception as exc:
