@@ -20,6 +20,15 @@ class ProfileRunner(Protocol):
 
 
 def build_runner(profile: ProfileConfig) -> ProfileRunner:
+    runner = profile.raw.get("runner")
+    if runner == "react_clone":
+        from stressbot.profiles.react_clone import ReactCloneProfile
+
+        return ReactCloneProfile(profile)
+    if runner == "php_clone":
+        from stressbot.profiles.php_clone import PhpCloneProfile
+
+        return PhpCloneProfile(profile)
     if profile.brand == "zaedl" or profile.name == "zaedl":
         from stressbot.profiles.zaedl import ZaedlProfile
 

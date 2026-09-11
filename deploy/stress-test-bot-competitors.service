@@ -1,0 +1,28 @@
+[Unit]
+Description=Competitor clone storefront stress bot (9 parallel interval profiles)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/stress-test-bot
+Environment=PYTHONUNBUFFERED=1
+Environment=STRESSBOT_TZ=Asia/Riyadh
+Environment=STRESSBOT_LOG_DIR=/var/log/stress-test-bot
+ExecStart=/opt/stress-test-bot/.venv/bin/python -m stressbot run-multi --manifest competitors-all --url-key prod
+Restart=always
+RestartSec=30
+
+CPUQuota=60%
+MemoryMax=768M
+MemoryHigh=640M
+TasksMax=128
+Nice=10
+IOWeight=50
+
+StandardOutput=append:/var/log/stress-test-bot/orchestrator.log
+StandardError=append:/var/log/stress-test-bot/orchestrator.log
+
+[Install]
+WantedBy=multi-user.target

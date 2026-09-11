@@ -1,0 +1,39 @@
+{
+  "name": "comp-agdalreem",
+  "brand": "comp-agdalreem",
+  "runner": "php_clone",
+  "variant": "gold",
+  "url_key": "prod",
+  "workers": 1,
+  "think_delay_ms": [800, 3500],
+  "schedule": {
+    "mode": "interval",
+    "window_minutes": 60,
+    "visits_per_window": [10, 20],
+    "loop": true
+  },
+  "auth": {
+    "mode": "email_login",
+    "login_path": "/auth.php",
+    "register_path": "/register.php",
+    "fields": { "email": "email", "password": "password" }
+  },
+  "checkout": {
+    "payment_path": "/payment_method.php",
+    "product_id": 1,
+    "coupon_required": true,
+    "coupon_field": "coupon_code"
+  },
+  "steps": {
+    "browse": true,
+    "catalog": true,
+    "auth": true,
+    "checkout": true,
+    "coupon": true
+  },
+  "payment_methods": ["tamara", "tabby"],
+  "timeout_s": 45,
+  "retry": { "max": 5, "backoff_ms": [1000, 3000] },
+  "on_capacity_blocked": "sleep_and_retry",
+  "capacity_sleep_s": [30, 90]
+}

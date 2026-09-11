@@ -6,5 +6,32 @@
   "altmiz": {
     "prod": "https://altmiz-store.shop",
     "local": "http://127.0.0.1:8001"
+  },
+  "comp-goldalreem": {
+    "prod": "https://goldalreem.com"
+  },
+  "comp-akdalreem": {
+    "prod": "https://akdalreem.com"
+  },
+  "comp-hussingold": {
+    "prod": "https://hussingold.com"
+  },
+  "comp-sadadgold": {
+    "prod": "https://sadadgold.com"
+  },
+  "comp-goldsadad": {
+    "prod": "https://goldsadad.com"
+  },
+  "comp-hussinsadad": {
+    "prod": "https://hussinsadad.com"
+  },
+  "comp-oqdalreem": {
+    "prod": "https://oqdalreem.com"
+  },
+  "comp-sadadcash": {
+    "prod": "https://sadadcash.com"
+  },
+  "comp-agdalreem": {
+    "prod": "https://agdalreem.com"
   }
 }

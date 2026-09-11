@@ -3,10 +3,11 @@ from __future__ import annotations
 import argparse
 import sys
 
-from stressbot.config import list_profiles, load_profile
+from stressbot.config import list_profiles, load_manifest, load_profile
 from stressbot.profiles.base import run_journey
 from stressbot.runners.continuous_pool import run_continuous_pool
 from stressbot.runners.interval_scheduler import IntervalSchedule, run_interval_schedule
+from stressbot.runners.multi_orchestrator import run_multi_orchestrator
 
 
 def _parse_ramp(value: str | None) -> tuple[int, float] | None:
@@ -35,6 +36,21 @@ def cmd_dry_run(args: argparse.Namespace) -> int:
         return 0
     print(f"FAIL at {result.step}: {result.error} ({result.duration_s:.2f}s)")
     return 1
+
+
+def cmd_run_multi(args: argparse.Namespace) -> int:
+    manifest = load_manifest(args.manifest)
+    print(
+        f"Multi orchestrator: manifest={args.manifest} "
+        f"profiles={len(manifest.get('profiles', []))}",
+        flush=True,
+    )
+    run_multi_orchestrator(
+        args.manifest,
+        url_key=args.url_key,
+        stats_interval_s=args.stats_interval,
+    )
+    return 0
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -84,6 +100,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--stats-interval", type=float, default=5.0)
     run.set_defaults(func=cmd_run)
+
+    multi = sub.add_parser(
+        "run-multi",
+        help="Run multiple interval profiles in parallel (competitor manifest)",
+    )
+    multi.add_argument("--manifest", default="competitors-all")
+    multi.add_argument("--url-key", default=None, choices=["prod", "local"])
+    multi.add_argument("--stats-interval", type=float, default=30.0)
+    multi.set_defaults(func=cmd_run_multi)
 
     return parser
 

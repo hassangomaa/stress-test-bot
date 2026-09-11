@@ -1,0 +1,15 @@
+{
+  "name": "competitors-all",
+  "description": "All 9 confirmed clone competitors — parallel light interval on VPS",
+  "profiles": [
+    "comp-goldalreem",
+    "comp-akdalreem",
+    "comp-hussingold",
+    "comp-sadadgold",
+    "comp-goldsadad",
+    "comp-hussinsadad",
+    "comp-oqdalreem",
+    "comp-sadadcash",
+    "comp-agdalreem"
+  ]
+}

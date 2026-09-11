@@ -71,6 +71,14 @@ def list_profiles() -> list[str]:
     return sorted(p.stem for p in PROFILES_DIR.glob("*.json"))
 
 
+def load_manifest(name: str) -> dict[str, Any]:
+    manifest_path = CONFIGS_DIR / f"{name}.json"
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Manifest not found: {name}")
+    with manifest_path.open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
 def load_profile(name: str, url_key: str | None = None) -> ProfileConfig:
     profile_path = PROFILES_DIR / f"{name}.json"
     if not profile_path.exists():
