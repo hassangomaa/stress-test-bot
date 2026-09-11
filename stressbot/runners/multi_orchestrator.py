@@ -44,13 +44,18 @@ def run_multi_orchestrator(
             schedule = IntervalSchedule.from_profile(profile)
             if schedule is None:
                 raise ValueError(f"Profile {profile_name} has no interval schedule")
-            run_interval_schedule(profile, schedule, stats_interval_s=stats_interval_s)
+            run_interval_schedule(
+                profile,
+                schedule,
+                stats_interval_s=stats_interval_s,
+                stop=stop,
+            )
         except Exception as exc:
             errors[profile_name] = str(exc)
             EventLogger.for_profile(profile_name, "").thread_crash(profile_name, str(exc))
 
     for name in profile_names:
-        thread = threading.Thread(target=_worker, args=(name,), name=f"stress-{name}", daemon=True)
+        thread = threading.Thread(target=_worker, args=(name,), name=f"stress-{name}", daemon=False)
         thread.start()
         threads.append(thread)
         orch_log.emit("thread_started", thread=name)

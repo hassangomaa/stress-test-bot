@@ -68,12 +68,15 @@ def run_interval_schedule(
     schedule: IntervalSchedule,
     *,
     stats_interval_s: float = 30.0,
+    stop: StopController | None = None,
 ) -> Metrics:
     """Run N visits per window, spread randomly across the hour. Repeats until stopped."""
     metrics = Metrics()
-    stop = StopController()
-    signal.signal(signal.SIGINT, stop.request_stop)
-    signal.signal(signal.SIGTERM, stop.request_stop)
+    own_stop = stop is None
+    if stop is None:
+        stop = StopController()
+        signal.signal(signal.SIGINT, stop.request_stop)
+        signal.signal(signal.SIGTERM, stop.request_stop)
 
     window_s = schedule.window_minutes * 60
     window_num = 0
@@ -139,7 +142,8 @@ def run_interval_schedule(
                 break
 
     finally:
-        stop.request_stop()
+        if own_stop:
+            stop.request_stop()
         print(metrics.format_summary())
 
     return metrics
