@@ -1,8 +1,8 @@
 # stress-test-bot
 
-CLI load tester for fin-core storefront checkout journeys (Zaedl, Altmiz). Generates synthetic users and cards (Luhn-valid PANs) and drives the same HTTP steps a real browser would.
+CLI load tester for fin-core storefront checkout journeys (Zaedl, Altmiz) and competitor clone monitoring (9 sites).
 
-**Warning:** `dry-run` and `run` hit real URLs. Use only against environments you own and have permission to load-test. Default Zaedl profile targets production.
+**Warning:** `dry-run` and `run` hit real URLs. Use only against environments you own and have permission to load-test. Default Zaedl profile targets production. Competitor profiles target external clone sites at light interval only.
 
 ## Requirements
 
@@ -45,6 +45,9 @@ python -m stressbot run --profile zaedl --url-key prod
 
 # Fewer workers, gradual ramp (50 workers every 10s)
 python -m stressbot run --profile zaedl --url-key prod --workers 50 --ramp 25:10s
+
+# All 9 competitor clones in parallel (light interval, VPS)
+python -m stressbot run-multi --manifest competitors-all --url-key prod
 ```
 
 ## Configuration
