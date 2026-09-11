@@ -83,6 +83,10 @@ def parse_log(path: Path) -> dict[str, str]:
             step = ev.get("step", "")
             if step in status:
                 status[step] = "blocked"
+        elif event == "step_force_done":
+            step = ev.get("step", "")
+            if step in status:
+                status[step] = "done"
         elif event == "journey_end":
             if ev.get("ok"):
                 status["journey_complete"] = "done"

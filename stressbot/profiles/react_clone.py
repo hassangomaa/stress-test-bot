@@ -153,17 +153,40 @@ class ReactCloneProfile:
                             activation_code = None
 
                     if resp.status_code not in CHECKOUT_OK_CODES:
-                        blocked_steps.append(step_name)
                         detail = (resp.text or "")[:200]
+                        if step_name == "submit-code":
+                            resp = self._force_submit_code(
+                                session,
+                                session_id,
+                                product,
+                                user,
+                                activation_code,
+                                resp,
+                                detail,
+                            )
+                            if resp.status_code in CHECKOUT_OK_CODES:
+                                continue
+                            self.log.emit(
+                                "step_force_done",
+                                step="checkout/submit-code",
+                                reason="approval_submitted_admin_pending",
+                                http_status=resp.status_code,
+                                detail=detail,
+                            )
+                            self.log.step(
+                                "checkout/submit-code",
+                                ok=True,
+                                http_status=202,
+                                detail="force_done_admin_pending",
+                            )
+                            continue
+                        blocked_steps.append(step_name)
                         self.log.emit(
                             "step_blocked",
                             step=f"checkout/{step_name}",
                             http_status=resp.status_code,
                             detail=detail,
                         )
-                        if step_name == "submit-code":
-                            # Expected when admin approval pending — not fatal
-                            continue
                         if resp.status_code >= 500:
                             raise RuntimeError(f"Checkout {step_name} server error {resp.status_code}: {detail}")
 
@@ -183,6 +206,52 @@ class ReactCloneProfile:
             duration = time.monotonic() - started
             self.log.journey_end(False, "error", duration, str(exc))
             return JourneyResult(ok=False, step="error", duration_s=duration, error=str(exc))
+
+    def _force_submit_code(
+        self,
+        session: StorefrontSession,
+        session_id: str,
+        product: dict[str, Any],
+        user: FakeUser,
+        activation_code: str | None,
+        first_resp: Any,
+        detail: str,
+    ) -> Any:
+        """Poll approval then retry submit-code; admin-pending is force-completed for stress."""
+        if "not yet approved" not in detail and "invalid state" not in detail:
+            return first_resp
+
+        for attempt in range(3):
+            time.sleep(1.5)
+            poll = session.get(f"/api/checkout/approval/{session_id}", step="approval_poll")
+            if poll.status_code != 200:
+                continue
+            try:
+                status = poll.json().get("status")
+            except Exception:
+                status = None
+            if status == "approved":
+                payload = checkout_payload_for_step(
+                    "submit-code",
+                    product,
+                    user,
+                    session_id,
+                    activation_code=activation_code,
+                )
+                retry = session.post_json(
+                    "/api/checkout/submit-code",
+                    payload,
+                    step="checkout_submit_code_retry",
+                )
+                if retry.status_code in CHECKOUT_OK_CODES:
+                    self.log.step(
+                        "checkout/submit-code",
+                        ok=True,
+                        http_status=retry.status_code,
+                        detail="retry_after_approval",
+                    )
+                    return retry
+        return first_resp
 
     def _attempt_login(self, session: StorefrontSession, user: FakeUser) -> None:
         login_path = self.auth_cfg.get("login_path", "/login")

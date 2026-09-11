@@ -12,7 +12,8 @@ Environment=STRESSBOT_TZ=Asia/Riyadh
 Environment=STRESSBOT_LOG_DIR=/var/log/stress-test-bot
 ExecStart=/opt/stress-test-bot/.venv/bin/python -m stressbot run-multi --manifest competitors-all --url-key prod
 Restart=always
-RestartSec=30
+RestartSec=15
+StartLimitIntervalSec=0
 
 CPUQuota=60%
 MemoryMax=768M
