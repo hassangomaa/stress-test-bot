@@ -50,7 +50,7 @@ def run_multi_orchestrator(
             EventLogger.for_profile(profile_name, "").thread_crash(profile_name, str(exc))
 
     for name in profile_names:
-        thread = threading.Thread(target=_worker, name=f"stress-{name}", daemon=True)
+        thread = threading.Thread(target=_worker, args=(name,), name=f"stress-{name}", daemon=True)
         thread.start()
         threads.append(thread)
         orch_log.emit("thread_started", thread=name)
