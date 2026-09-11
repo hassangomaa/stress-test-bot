@@ -107,11 +107,20 @@ def render_table(log_dir: Path) -> str:
         blocked = [s for s in steps if status.get(s) == "blocked"]
         pending = [s for s in steps if status.get(s) == "pending"]
 
-        overall = "FULL_CHECKOUT" if status.get("journey_complete") == "done" and not blocked else (
-            "PARTIAL" if done > 0 else "NO_ACTIVITY"
-        )
-        if blocked:
-            overall = "BLOCKED"
+        if status.get("journey_complete") != "done":
+            overall = "PARTIAL" if done > 0 else "NO_ACTIVITY"
+        elif status.get("payment_method_post") == "done":
+            overall = "FULL_CHECKOUT"
+        elif status.get("checkout/approval") == "done":
+            overall = (
+                "FULL_CHECKOUT_PENDING_ADMIN"
+                if status.get("checkout/submit-code") == "blocked"
+                else "FULL_CHECKOUT"
+            )
+        elif done > 0:
+            overall = "PARTIAL"
+        else:
+            overall = "NO_ACTIVITY"
 
         lines.append(f"## {slug}.com [{overall}] ({done}/{len(steps)} steps done)")
         for step in steps:
