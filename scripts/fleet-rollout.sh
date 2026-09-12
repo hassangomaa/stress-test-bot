@@ -29,15 +29,18 @@ remote_install() {
   local node_id="$1" host="$2" port="$3" user="$4" auth="$5" mem="$6"
   echo ""
   echo "========== ROLLOUT ${node_id} @ ${host} =========="
-  local remote_cmd="bash -s -- ${node_id} ${mem}"
+  local remote_shell="bash -s -- ${node_id} ${mem}"
+  if [[ "$node_id" == "ttakka" ]]; then
+    remote_shell="sudo bash -s -- ${node_id} ${mem}"
+  fi
   if [[ "$auth" == "password" ]]; then
     local pass="$FIN_CORE_PASS"
     if [[ "$node_id" == eco7-* ]]; then pass="$ECO7_PASS"; fi
-    ssh_pw "$pass" "$host" "$port" "$user" "bash -s -- ${node_id} ${mem}" < "$INSTALL_SCRIPT"
+    ssh_pw "$pass" "$host" "$port" "$user" "$remote_shell" < "$INSTALL_SCRIPT"
   else
     local key="$SLT_OCR_KEY"
     if [[ "$node_id" == "ttakka" ]]; then key="$TTAKKA_KEY"; fi
-    ssh_key "$key" "$host" "$port" "$user" "bash -s -- ${node_id} ${mem}" < "$INSTALL_SCRIPT"
+    ssh_key "$key" "$host" "$port" "$user" "$remote_shell" < "$INSTALL_SCRIPT"
   fi
 }
 

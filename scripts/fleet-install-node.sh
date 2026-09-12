@@ -21,6 +21,14 @@ fi
 command -v python3 >/dev/null || { echo "python3 missing" >&2; exit 1; }
 command -v git >/dev/null || { echo "git missing" >&2; exit 1; }
 
+if ! python3 -m venv --help >/dev/null 2>&1; then
+  if command -v apt-get >/dev/null; then
+    apt-get update -qq
+    PY_VER="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+    apt-get install -y -qq "python${PY_VER}-venv" python3-pip git curl || apt-get install -y -qq python3-venv python3-pip git curl
+  fi
+fi
+
 mkdir -p "$(dirname "${INSTALL_DIR}")"
 if [[ -d "${INSTALL_DIR}/.git" ]]; then
   cd "${INSTALL_DIR}"
@@ -63,4 +71,4 @@ sleep 2
 systemctl is-active "${LEGACY_UNIT}@${NODE_ID}"
 echo "==> Logs: tail -f ${LOG_DIR}/orchestrator.log"
 echo "==> Egress check:"
-curl -s --max-time 12 https://ifconfig.me || true
+curl -4s --max-time 12 https://ipv4.ifconfig.me || curl -4s --max-time 12 https://api.ipify.org || true

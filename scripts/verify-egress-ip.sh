@@ -13,7 +13,7 @@ skip=0
 
 ssh_egress() {
   local host="$1" port="$2" user="$3" auth="$4" key="${5:-}" pass="${6:-}"
-  local cmd="curl -s --max-time 12 https://ifconfig.me || curl -s --max-time 12 https://api.ipify.org"
+  local cmd="curl -4s --max-time 12 https://ipv4.ifconfig.me || curl -4s --max-time 12 https://api.ipify.org"
   if [[ "$auth" == "key" && -n "$key" ]]; then
     ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
       -p "$port" "${user}@${host}" "$cmd" 2>/dev/null || return 1

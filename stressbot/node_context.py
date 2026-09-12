@@ -15,7 +15,7 @@ class NodeContext:
 
 
 def detect_egress_ip(timeout_s: float = 12.0) -> str:
-    for url in ("https://ifconfig.me", "https://api.ipify.org"):
+    for url in ("https://ipv4.ifconfig.me", "https://api.ipify.org", "https://ifconfig.me"):
         try:
             response = httpx.get(url, timeout=timeout_s)
             response.raise_for_status()
