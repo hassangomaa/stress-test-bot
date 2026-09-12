@@ -5,18 +5,27 @@
   "variant": "gold",
   "url_key": "prod",
   "workers": 1,
-  "think_delay_ms": [800, 3500],
+  "think_delay_ms": [
+    800,
+    3500
+  ],
   "schedule": {
     "mode": "interval",
     "window_minutes": 60,
-    "visits_per_window": [10, 20],
+    "visits_per_window": [
+      20,
+      40
+    ],
     "loop": true
   },
   "auth": {
     "mode": "login_optional",
     "login_path": "/login",
     "register_path": null,
-    "fields": { "phone": "phone", "password": "password" }
+    "fields": {
+      "phone": "phone",
+      "password": "password"
+    }
   },
   "checkout": {
     "catalog_api": "/api/products",
@@ -37,7 +46,16 @@
     "activation_gate": "auto"
   },
   "timeout_s": 45,
-  "retry": { "max": 5, "backoff_ms": [1000, 3000] },
+  "retry": {
+    "max": 5,
+    "backoff_ms": [
+      1000,
+      3000
+    ]
+  },
   "on_capacity_blocked": "sleep_and_retry",
-  "capacity_sleep_s": [30, 90]
+  "capacity_sleep_s": [
+    30,
+    90
+  ]
 }

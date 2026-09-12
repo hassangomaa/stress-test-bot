@@ -6,7 +6,12 @@ from stressbot.event_log import EventLogger
 
 
 def test_event_log_writes_json_with_unix_ts(tmp_path, monkeypatch):
+    from stressbot.node_context import get_node_context
+
+    get_node_context.cache_clear()
     monkeypatch.setenv("STRESSBOT_LOG_DIR", str(tmp_path))
+    monkeypatch.setenv("STRESSBOT_NODE_ID", "fin-core")
+    monkeypatch.setenv("STRESSBOT_EGRESS_IP", "31.97.180.152")
     EventLogger._instances.clear()
 
     logger = EventLogger.for_profile("comp-goldalreem", "https://goldalreem.com")
@@ -19,6 +24,8 @@ def test_event_log_writes_json_with_unix_ts(tmp_path, monkeypatch):
     assert payload["event"] == "step"
     assert payload["step"] == "catalog"
     assert payload["profile"] == "comp-goldalreem"
+    assert payload["node_id"] == "fin-core"
+    assert payload["egress_ip"] == "31.97.180.152"
     assert isinstance(payload["ts_unix"], float)
 
 

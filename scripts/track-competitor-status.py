@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Parse competitor stress-test logs and print per-domain step status."""
+"""Parse competitor stress-test logs — per-node fleet matrix."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -43,13 +44,16 @@ DOMAINS = {
     "agdalreem": "php",
 }
 
+DEFAULT_NODES = ["fin-core", "slt-ocr", "eco7-dev", "eco7-prod", "ttakka"]
+
 
 def parse_log(path: Path) -> dict[str, str]:
     steps_template = REACT_STEPS if "agdalreem" not in path.name else PHP_STEPS
     status = {s: "pending" for s in steps_template}
+    meta = {"node_id": "", "egress_ip": "", "journeys_ok": 0, "journeys_fail": 0}
 
     if not path.exists():
-        return status
+        return {**status, **meta}
 
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -59,6 +63,11 @@ def parse_log(path: Path) -> dict[str, str]:
             ev = json.loads(line)
         except json.JSONDecodeError:
             continue
+
+        if ev.get("node_id"):
+            meta["node_id"] = ev["node_id"]
+        if ev.get("egress_ip"):
+            meta["egress_ip"] = ev["egress_ip"]
 
         event = ev.get("event")
         if event == "journey_start":
@@ -76,9 +85,6 @@ def parse_log(path: Path) -> dict[str, str]:
         elif event == "coupon_attempted":
             if "coupon_post" in status:
                 status["coupon_post"] = "done"
-        elif event == "gate_skipped":
-            if "auth_skipped" in status:
-                pass  # gate is separate
         elif event == "step_blocked":
             step = ev.get("step", "")
             if step in status:
@@ -90,59 +96,99 @@ def parse_log(path: Path) -> dict[str, str]:
         elif event == "journey_end":
             if ev.get("ok"):
                 status["journey_complete"] = "done"
+                meta["journeys_ok"] += 1
             else:
                 status["journey_complete"] = "blocked"
+                meta["journeys_fail"] += 1
+        elif event == "thread_crash":
+            status["journey_complete"] = "blocked"
 
-    return status
+    return {**status, **meta}
 
 
-def render_table(log_dir: Path) -> str:
-    lines = [
-        f"Competitor stress status @ {time.strftime('%Y-%m-%d %H:%M:%S')}",
-        f"Log dir: {log_dir}",
-        "",
-    ]
+def overall_label(status: dict[str, str], steps: list[str]) -> str:
+    done = sum(1 for s in steps if status.get(s) == "done")
+    if status.get("journey_complete") != "done":
+        return "PARTIAL" if done > 0 else "NO_ACTIVITY"
+    if status.get("payment_method_post") == "done":
+        return "FULL_CHECKOUT"
+    if status.get("checkout/approval") == "done":
+        if status.get("checkout/submit-code") == "blocked":
+            return "FULL_CHECKOUT_PENDING_ADMIN"
+        return "FULL_CHECKOUT"
+    return "PARTIAL" if done > 0 else "NO_ACTIVITY"
+
+
+def render_node(log_dir: Path, node_id: str) -> list[str]:
+    lines = [f"### Node `{node_id}` — {log_dir}", ""]
+    egress = ""
+    for slug in DOMAINS:
+        path = log_dir / f"comp-{slug}.log"
+        status = parse_log(path)
+        if status.get("egress_ip"):
+            egress = status["egress_ip"]
+    lines.append(f"Egress IP: {egress or 'unknown'}")
+    lines.append("")
 
     for slug, kind in DOMAINS.items():
         path = log_dir / f"comp-{slug}.log"
         status = parse_log(path)
         steps = REACT_STEPS if kind == "react" else PHP_STEPS
+        overall = overall_label(status, steps)
         done = sum(1 for s in steps if status.get(s) == "done")
         blocked = [s for s in steps if status.get(s) == "blocked"]
-        pending = [s for s in steps if status.get(s) == "pending"]
-
-        if status.get("journey_complete") != "done":
-            overall = "PARTIAL" if done > 0 else "NO_ACTIVITY"
-        elif status.get("payment_method_post") == "done":
-            overall = "FULL_CHECKOUT"
-        elif status.get("checkout/approval") == "done":
-            overall = (
-                "FULL_CHECKOUT_PENDING_ADMIN"
-                if status.get("checkout/submit-code") == "blocked"
-                else "FULL_CHECKOUT"
-            )
-        elif done > 0:
-            overall = "PARTIAL"
-        else:
-            overall = "NO_ACTIVITY"
-
-        lines.append(f"## {slug}.com [{overall}] ({done}/{len(steps)} steps done)")
-        for step in steps:
-            st = status.get(step, "pending")
-            icon = {"pending": "⏳", "done": "✅", "blocked": "🚫"}.get(st, "?")
-            lines.append(f"  {icon} {step}: {st}")
+        lines.append(f"  {slug}.com [{overall}] ({done}/{len(steps)}) ok={status.get('journeys_ok',0)} fail={status.get('journeys_fail',0)}")
         if blocked:
-            lines.append(f"  blocked: {', '.join(blocked)}")
-        if pending and status.get("journey_complete") != "done":
-            lines.append(f"  pending: {', '.join(pending[:5])}{'...' if len(pending)>5 else ''}")
-        lines.append("")
+            lines.append(f"    blocked: {', '.join(blocked[:4])}")
+    lines.append("")
+    return lines
 
+
+def discover_nodes(base: Path) -> list[str]:
+    if not base.exists():
+        return []
+    nodes = [p.name for p in base.iterdir() if p.is_dir() and (p / "orchestrator.log").exists()]
+    legacy = base / "orchestrator.log"
+    if legacy.exists() and not nodes:
+        return ["legacy"]
+    return sorted(nodes)
+
+
+def render_table(log_dir: Path, nodes: list[str] | None = None) -> str:
+    base = log_dir
+    node_ids = nodes or discover_nodes(base)
+    if not node_ids:
+        node_ids = ["."]
+        dirs = {".": base}
+    else:
+        dirs = {n: (base / n if n != "legacy" else base) for n in node_ids}
+
+    lines = [
+        f"Competitor fleet status @ {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Base log dir: {base}",
+        "",
+    ]
+    for node_id, ndir in dirs.items():
+        label = node_id if node_id != "." else "default"
+        lines.extend(render_node(ndir, label))
     return "\n".join(lines)
 
 
 def main() -> int:
-    log_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "/var/log/stress-test-bot")
-    print(render_table(log_dir))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("log_dir", nargs="?", default="/var/log/stress-test-bot")
+    parser.add_argument("--node", action="append", dest="nodes", help="Limit to node id(s)")
+    parser.add_argument("--all-nodes", action="store_true", help="Scan all node subdirs")
+    args = parser.parse_args()
+
+    base = Path(args.log_dir)
+    nodes = args.nodes
+    if args.all_nodes:
+        nodes = discover_nodes(base) or DEFAULT_NODES
+        existing = [n for n in nodes if (base / n).is_dir()]
+        nodes = existing or nodes
+
+    print(render_table(base, nodes))
     return 0
 
 

@@ -11,6 +11,7 @@ import httpx
 
 from stressbot.browser import BROWSE_PATHS, BrowserProfile, browser_headers, pick_browser_profile
 from stressbot.config import ProfileConfig
+from stressbot.node_context import get_proxy_url
 
 
 CAPACITY_MARKERS = (
@@ -48,12 +49,16 @@ class StorefrontSession:
         self._csrf_token: str | None = None
         self.visitor_token: str | None = None
         self.browser: BrowserProfile = pick_browser_profile()
-        self._client = httpx.Client(
-            base_url=self.base_url,
-            timeout=profile.timeout_s,
-            follow_redirects=True,
-            headers=browser_headers(self.browser),
-        )
+        proxy = get_proxy_url() or profile.raw.get("proxy_url")
+        client_kwargs: dict[str, Any] = {
+            "base_url": self.base_url,
+            "timeout": profile.timeout_s,
+            "follow_redirects": True,
+            "headers": browser_headers(self.browser),
+        }
+        if proxy:
+            client_kwargs["proxy"] = proxy
+        self._client = httpx.Client(**client_kwargs)
 
     def close(self) -> None:
         self._client.close()

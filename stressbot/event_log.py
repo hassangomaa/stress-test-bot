@@ -8,11 +8,16 @@ import time
 from pathlib import Path
 from typing import Any
 
+from stressbot.node_context import get_node_context
+
 
 def _log_dir() -> Path:
     raw = os.environ.get("STRESSBOT_LOG_DIR", "").strip()
     if raw:
         return Path(raw)
+    node_id = os.environ.get("STRESSBOT_NODE_ID", "").strip()
+    if node_id:
+        return Path(f"/var/log/stress-test-bot/{node_id}")
     return Path.cwd() / "logs"
 
 
@@ -48,8 +53,11 @@ class EventLogger:
             return cls._instances[key]
 
     def emit(self, event: str, **fields: Any) -> None:
+        ctx = get_node_context()
         payload: dict[str, Any] = {
             "ts_unix": round(time.time(), 3),
+            "node_id": ctx.node_id,
+            "egress_ip": ctx.egress_ip,
             "profile": self.profile,
             "site": self.site,
             "event": event,

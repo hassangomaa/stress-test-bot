@@ -1,6 +1,12 @@
 {
   "name": "competitors-all",
-  "description": "All 9 confirmed clone competitors — parallel light interval on VPS",
+  "description": "All 9 confirmed clone competitors — parallel interval fleet (2x visits)",
+  "schedule": {
+    "mode": "interval",
+    "window_minutes": 60,
+    "visits_per_window": [20, 40],
+    "loop": true
+  },
   "profiles": [
     "comp-goldalreem",
     "comp-akdalreem",

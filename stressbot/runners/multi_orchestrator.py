@@ -5,10 +5,19 @@ import threading
 import time
 from typing import Any
 
-from stressbot.config import load_manifest, load_profile
+from stressbot.config import ProfileConfig, load_manifest, load_profile
 from stressbot.event_log import EventLogger
+from stressbot.node_context import init_node_context
 from stressbot.runners.continuous_pool import StopController
 from stressbot.runners.interval_scheduler import IntervalSchedule, run_interval_schedule
+
+
+def _apply_manifest_schedule(profile: ProfileConfig, manifest: dict[str, Any]) -> None:
+    schedule = manifest.get("schedule")
+    if schedule and isinstance(schedule, dict):
+        merged = dict(profile.raw.get("schedule", {}))
+        merged.update(schedule)
+        profile.raw["schedule"] = merged
 
 
 def run_multi_orchestrator(
@@ -23,7 +32,14 @@ def run_multi_orchestrator(
     if not profile_names:
         raise ValueError(f"Manifest {manifest_name} has no profiles")
 
+    node = init_node_context()
     orch_log = EventLogger.orchestrator()
+    orch_log.emit(
+        "fleet_node_ready",
+        node_id=node.node_id,
+        egress_ip=node.egress_ip,
+        proxy_url=node.proxy_url,
+    )
     stop = StopController()
     signal.signal(signal.SIGINT, stop.request_stop)
     signal.signal(signal.SIGTERM, stop.request_stop)
@@ -33,6 +49,8 @@ def run_multi_orchestrator(
         manifest=manifest_name,
         profile_count=len(profile_names),
         profiles=profile_names,
+        node_id=node.node_id,
+        egress_ip=node.egress_ip,
     )
 
     threads: list[threading.Thread] = []
@@ -41,6 +59,7 @@ def run_multi_orchestrator(
     def _worker(profile_name: str) -> None:
         try:
             profile = load_profile(profile_name, url_key)
+            _apply_manifest_schedule(profile, manifest)
             schedule = IntervalSchedule.from_profile(profile)
             if schedule is None:
                 raise ValueError(f"Profile {profile_name} has no interval schedule")

@@ -1,0 +1,79 @@
+{
+  "schema": "stress-fleet-egress-nodes-v1",
+  "updated": "2026-09-12",
+  "status": "active",
+  "manifest": "competitors-all",
+  "install_path": "/opt/stress-test-bot",
+  "log_dir_pattern": "/var/log/stress-test-bot/{node_id}",
+  "schedule": {
+    "mode": "interval",
+    "window_minutes": 60,
+    "visits_per_window": [20, 40],
+    "loop": true
+  },
+  "nodes": [
+    {
+      "id": "fin-core",
+      "public_ip": "31.97.180.152",
+      "enabled": true,
+      "role": "primary_orchestrator",
+      "ssh": { "user": "root", "port": 22, "auth": "password" },
+      "systemd": { "unit": "stress-test-bot-competitors@fin-core", "memory_max": "768M", "tasks_max": 128 },
+      "rollout_order": 1
+    },
+    {
+      "id": "slt-ocr",
+      "public_ip": "69.62.114.63",
+      "hostinger_vm_id": "1652428",
+      "enabled": true,
+      "role": "worker",
+      "ssh": { "user": "root", "port": 22, "auth": "key", "key_mac": "/Users/hassangomaa/.ssh/egyguests_vps" },
+      "systemd": { "unit": "stress-test-bot-competitors@slt-ocr", "memory_max": "512M", "tasks_max": 64 },
+      "rollout_order": 2
+    },
+    {
+      "id": "slt-shared",
+      "public_ip": "72.61.99.221",
+      "enabled": false,
+      "blocked_reason": "shared hosting — no long-running systemd; enable cron fallback later",
+      "role": "worker_light",
+      "ssh": { "user": "u313493766", "port": 65002, "auth": "password" },
+      "rollout_order": 3
+    },
+    {
+      "id": "eco7-dev",
+      "public_ip": "80.241.219.119",
+      "enabled": true,
+      "role": "worker",
+      "ssh": { "user": "root", "port": 22, "auth": "password" },
+      "systemd": { "unit": "stress-test-bot-competitors@eco7-dev", "memory_max": "512M", "tasks_max": 64 },
+      "rollout_order": 4
+    },
+    {
+      "id": "eco7-prod",
+      "public_ip": "80.241.212.49",
+      "enabled": true,
+      "role": "worker",
+      "ssh": { "user": "root", "port": 22, "auth": "password" },
+      "systemd": { "unit": "stress-test-bot-competitors@eco7-prod", "memory_max": "512M", "tasks_max": 64 },
+      "rollout_order": 5
+    },
+    {
+      "id": "ttakka",
+      "public_ip": "187.124.9.225",
+      "enabled": true,
+      "role": "worker",
+      "ssh": { "user": "deploy", "port": 22, "auth": "key", "key_mac": "/Users/hassangomaa/.ssh/cursor_ttakka" },
+      "systemd": { "unit": "stress-test-bot-competitors@ttakka", "memory_max": "512M", "tasks_max": 64 },
+      "rollout_order": 6
+    },
+    {
+      "id": "mysaudicore",
+      "public_ip": "31.97.116.206",
+      "enabled": false,
+      "blocked_reason": "ssh password missing in vault",
+      "role": "worker",
+      "rollout_order": 99
+    }
+  ]
+}
