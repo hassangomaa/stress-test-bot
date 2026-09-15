@@ -44,7 +44,7 @@ DOMAINS = {
     "agdalreem": "php",
 }
 
-DEFAULT_NODES = ["fin-core", "slt-ocr", "eco7-dev", "eco7-prod", "ttakka"]
+DEFAULT_NODES = ["fin-core", "slt-ocr", "ttakka"]
 
 
 def parse_log(path: Path) -> dict[str, str]:

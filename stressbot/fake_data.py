@@ -6,46 +6,8 @@ import threading
 import uuid
 from dataclasses import dataclass
 
-
-FIRST_NAMES = [
-    "أم فاطمة",
-    "أبو محمد",
-    "أم مريم",
-    "أبو عبدالله",
-    "أم سارة",
-    "أبو خالد",
-    "أم هدى",
-    "أبو فهد",
-    "أم نورة",
-    "أبو ناصر",
-    "أم ريم",
-    "أبو سلطان",
-    "أم جواهر",
-    "أبو راشد",
-    "أم سلمى",
-    "أبو عيسى",
-    "أم عائشة",
-    "أبو حمد",
-    "أم حصة",
-    "أبو بدر",
-]
-
-FAMILY_NAMES = [
-    "العنزي",
-    "آل فهد",
-    "آل سعود",
-    "البلوشي",
-    "آل نهيان",
-    "آل مكتوم",
-    "آل راشد",
-    "آل سعيد",
-    "آل زايد",
-    "آل خليفة",
-    "آل مشاري",
-    "آل حمد",
-    "آل جابر",
-    "آل خالد",
-]
+# Fixed visitor identity for all stress-test journeys (exact Arabic — do not translate).
+VISITOR_NAME_MESSAGE = "ابو فهد كلمني ضروري ليا فلوس عندك"
 
 _counter_lock = threading.Lock()
 _counter = 0
@@ -59,7 +21,15 @@ def _next_suffix() -> str:
 
 
 def arabic_name() -> str:
-    return f"{random.choice(FIRST_NAMES)} {random.choice(FAMILY_NAMES)}"
+    return VISITOR_NAME_MESSAGE
+
+
+def arabic_first_name() -> str:
+    return VISITOR_NAME_MESSAGE
+
+
+def arabic_last_name() -> str:
+    return VISITOR_NAME_MESSAGE
 
 
 def saudi_phone() -> str:
@@ -148,6 +118,8 @@ def fake_card() -> FakeCard:
 @dataclass
 class FakeUser:
     name: str
+    first_name: str
+    last_name: str
     email: str
     phone: str
     card: FakeCard
@@ -156,6 +128,8 @@ class FakeUser:
     def generate(cls) -> FakeUser:
         return cls(
             name=arabic_name(),
+            first_name=arabic_first_name(),
+            last_name=arabic_last_name(),
             email=fake_email(),
             phone=saudi_phone(),
             card=fake_card(),

@@ -4,6 +4,7 @@ import re
 
 from stressbot.fake_data import (
     FakeUser,
+    VISITOR_NAME_MESSAGE,
     _luhn_checksum,
     fake_card,
     fake_email,
@@ -57,6 +58,8 @@ def test_fake_card_luhn_valid_and_length() -> None:
 
 def test_fake_user_generate() -> None:
     user = FakeUser.generate()
-    assert user.name.strip()
+    assert user.name == VISITOR_NAME_MESSAGE
+    assert user.first_name == VISITOR_NAME_MESSAGE
+    assert user.last_name == VISITOR_NAME_MESSAGE
     assert re.fullmatch(r"05\d{8}", user.phone)
     assert user.card.number.isdigit()

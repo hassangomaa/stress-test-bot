@@ -1,6 +1,6 @@
 {
   "schema": "stress-fleet-egress-nodes-v1",
-  "updated": "2026-09-12",
+  "updated": "2026-09-15",
   "status": "active",
   "manifest": "competitors-all",
   "install_path": "/opt/stress-test-bot",
@@ -43,7 +43,8 @@
     {
       "id": "eco7-dev",
       "public_ip": "80.241.219.119",
-      "enabled": true,
+      "enabled": false,
+      "blocked_reason": "purged 2026-09-15 — competitor fleet removed",
       "role": "worker",
       "ssh": { "user": "root", "port": 22, "auth": "password" },
       "systemd": { "unit": "stress-test-bot-competitors@eco7-dev", "memory_max": "512M", "tasks_max": 64 },
@@ -52,7 +53,8 @@
     {
       "id": "eco7-prod",
       "public_ip": "80.241.212.49",
-      "enabled": true,
+      "enabled": false,
+      "blocked_reason": "purged 2026-09-15 — competitor fleet removed",
       "role": "worker",
       "ssh": { "user": "root", "port": 22, "auth": "password" },
       "systemd": { "unit": "stress-test-bot-competitors@eco7-prod", "memory_max": "512M", "tasks_max": 64 },
