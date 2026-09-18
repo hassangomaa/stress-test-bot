@@ -184,16 +184,20 @@ def remote_aggregate(
 def load_node_ssh() -> dict[str, dict[str, str]]:
     slt_key = os.environ.get("FLEET_SSH_KEY_SLT_OCR", "/root/.ssh/egyguests_vps")
     slt_auth = slt_key if Path(slt_key).exists() else "password"
+
+    ttakka_key = os.environ.get("FLEET_SSH_KEY_TTAKKA", "/root/.ssh/cursor_ttakka")
+    ttakka_auth = ttakka_key if Path(ttakka_key).exists() else "password"
+
     return {
         "slt-ocr": {
             "host": os.environ.get("FLEET_SSH_HOST_SLT_OCR", "69.62.114.63"),
-            "user": "root",
+            "user": os.environ.get("FLEET_SSH_USER_SLT_OCR", "root"),
             "auth": slt_auth,
         },
         "ttakka": {
             "host": os.environ.get("FLEET_SSH_HOST_TTAKKA", "187.124.9.225"),
-            "user": "root",
-            "auth": "password",
+            "user": os.environ.get("FLEET_SSH_USER_TTAKKA", "deploy"),
+            "auth": ttakka_auth,
         },
     }
 
