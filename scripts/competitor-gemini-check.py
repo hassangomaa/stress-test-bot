@@ -271,6 +271,8 @@ def gemini_candidates(known: set[str], regex_patterns: list[str]) -> tuple[list[
             .get("parts", [{}])[0]
             .get("text", "")
         )
+        text = re.sub(r"^```(?:json)?\s*", "", text.strip())
+        text = re.sub(r"\s*```$", "", text.strip())
         m = re.search(r"\[[\s\S]*?\]", text)
         if not m:
             return [], "invalid_json"
