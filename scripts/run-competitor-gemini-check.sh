@@ -18,7 +18,11 @@ fi
 {
   echo "===== $(date -Iseconds) competitor gemini check start ====="
   cd "$INSTALL_DIR"
-  if .venv/bin/python scripts/competitor-gemini-check.py --hours 12; then
+  PYTHON="${INSTALL_DIR}/.venv/bin/python"
+  if [[ ! -x "$PYTHON" ]]; then
+    PYTHON="$(command -v python3)"
+  fi
+  if "$PYTHON" scripts/competitor-gemini-check.py --hours 12; then
     echo "telegram: sent OK"
   else
     echo "telegram: SEND FAILED" >&2
