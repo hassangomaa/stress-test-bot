@@ -20,7 +20,9 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 TZ=Asia/Riyadh
 
 # TtaKkaa node Gemini + fleet visit ping → TtaKkaa ops Telegram
-5 8,20 * * * root ${RUNNER}
+# cron schedules in SYSTEM time (UTC); TZ= above only affects the command env.
+# 05:20/17:20 UTC = 08:20/20:20 Riyadh (after the 08:00/20:00 ops brief).
+20 5,17 * * * root ${RUNNER}
 EOF
 chmod 644 "$CRON_FILE"
 
